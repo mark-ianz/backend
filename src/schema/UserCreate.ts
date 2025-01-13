@@ -36,5 +36,3 @@ export const UserCreateSchema = z.object({
       message: "Phone number must only contain digits.",
     }),
 });
-
-export type UserCreate = z.infer<typeof UserCreateSchema>;
