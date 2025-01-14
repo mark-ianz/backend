@@ -12,8 +12,9 @@ app.listen(PORT, () => {
   console.log("Listening to PORT " + PORT);
 });
 
-app.get("/", (req, res) => {
-  res.send("hello");
-});
-
 app.use("/api/user", userRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Endpoint not found." });
+  return;
+});
