@@ -19,7 +19,7 @@ export const UserCreateSchema = z.object({
   password: z.string().min(min_password_length, {
     message: `Password must be at least ${min_password_length} characters long.`,
   }),
-  gender: z.enum(["male", "female"], { message: "Invalid gender." }),
+  gender: z.enum(["male", "female", "prefer not to say"], { message: "Invalid gender." }),
   birthdate: z
     .string()
     .min(1, { message: "Birthdate is required." })
