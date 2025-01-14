@@ -4,6 +4,7 @@ import { UserCreateSchema } from "../schema/UserCreate";
 import { handleZodErrors } from "../helpers/validation";
 import pool from "../connection/database";
 import { ResultSetHeader } from "mysql2";
+import { hashPassword } from "../helpers/hash";
 
 export async function createUser(
   req: Request<{}, {}, UserCreate>,
@@ -41,10 +42,13 @@ export async function createUser(
       ]
     );
 
+    // hash the password
+    const hashedPassword = hashPassword(password);
+
     // insert the data into account and use the insertId for foreign key
     await connection.query<ResultSetHeader>(
-      "INSERT INTO `account` (`user_info_ids`, `username`, `password`) VALUES (?, ?, ?)",
-      [insertId, username, password]
+      "INSERT INTO `account` (`user_info_id`, `username`, `password`) VALUES (?, ?, ?)",
+      [insertId, username, hashedPassword]
     );
 
     // commit the data if all queries are success
