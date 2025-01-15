@@ -5,6 +5,7 @@ import { handleZodErrors } from "../helpers/validation";
 import pool from "../connection/database";
 import { ResultSetHeader } from "mysql2";
 import { hashPassword } from "../helpers/hash";
+import { GET_USER_ACCOUNT_INFO } from "../query/account.query";
 
 export async function createUser(
   req: Request<{}, {}, UserCreate>,
@@ -30,16 +31,8 @@ export async function createUser(
 
     // insert the data and destructure the result to get insertId
     const [{ insertId }] = await connection.query<ResultSetHeader>(
-      "INSERT INTO user_info (email, first_name, middle_name, last_name, gender, birthdate, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        email,
-        first_name,
-        middle_name,
-        last_name,
-        gender,
-        birthdate,
-        phone_number,
-      ]
+      "INSERT INTO user_info (first_name, middle_name, last_name, gender, birthdate, phone_number) VALUES (?, ?, ?, ?, ?, ?)",
+      [first_name, middle_name, last_name, gender, birthdate, phone_number]
     );
 
     // hash the password
@@ -47,8 +40,8 @@ export async function createUser(
 
     // insert the data into account and use the insertId for foreign key
     await connection.query<ResultSetHeader>(
-      "INSERT INTO `account` (`user_info_id`, `username`, `password`) VALUES (?, ?, ?)",
-      [insertId, username, hashedPassword]
+      "INSERT INTO `account` (`user_info_id`, `username`, email, `password`) VALUES (?, ?, ?, ?)",
+      [insertId, username, email, hashedPassword]
     );
 
     // commit the data if all queries are success
@@ -73,26 +66,12 @@ export async function getAccountInfo(
 ) {
   try {
     const { username } = req.params;
+    
     const connection = await pool.getConnection();
 
-    const query = `SELECT 
-    a.account_id, 
-    a.username, 
-    ui.user_info_id, 
-    ui.email, ui.first_name, 
-    ui.middle_name, 
-    ui.last_name, 
-    ui.gender, 
-    ui.birthdate, 
-    ui.phone_number 
-    FROM account AS a 
-    INNER JOIN user_info AS ui 
-    ON ui.user_info_id = a.user_info_id
-    WHERE username = ?`;
-    const query_params = [username];
     const [result] = await connection.query<ResultSetHeader>(
-      query,
-      query_params
+      GET_USER_ACCOUNT_INFO,
+      [username]
     );
 
     res.json(result);
