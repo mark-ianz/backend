@@ -66,3 +66,41 @@ export async function createUser(
     if (connection) connection.release();
   }
 }
+
+export async function getAccountInfo(
+  req: Request<{ username: string }>,
+  res: Response
+) {
+  try {
+    const { username } = req.params;
+    const connection = await pool.getConnection();
+
+    const query = `SELECT 
+    a.account_id, 
+    a.username, 
+    ui.user_info_id, 
+    ui.email, ui.first_name, 
+    ui.middle_name, 
+    ui.last_name, 
+    ui.gender, 
+    ui.birthdate, 
+    ui.phone_number 
+    FROM account AS a 
+    INNER JOIN user_info AS ui 
+    ON ui.user_info_id = a.user_info_id
+    WHERE username = ?`;
+    const query_params = [username];
+    const [result] = await connection.query<ResultSetHeader>(
+      query,
+      query_params
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "There was a server error. Please try again later." });
+    return;
+  }
+}
