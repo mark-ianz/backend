@@ -48,7 +48,7 @@ export async function createUser(
     // commit the data if all queries are success
     await connection.commit();
 
-    res.end().status(201).json({ message: "User created successfully." });
+    res.status(201).json({ message: "User created successfully." });
   } catch (error) {
     // if there was an error, the query will rollback and won't save the previous query before error
     await connection.rollback();
