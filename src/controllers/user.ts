@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { UserCreate } from "../dtos/userCreate.dtos";
 import { UserCreateSchema } from "../schema/UserCreate";
-import { handleZodErrors } from "../helpers/validation";
+import { handleZodErrors, throwServerError } from "../helpers/errorHandlers";
 import pool from "../connection/database";
 import { ResultSetHeader } from "mysql2";
 import { hashPassword } from "../helpers/hash";
 import { GET_USER_ACCOUNT_INFO } from "../query/account.query";
+import { z } from "zod";
 
 export async function createUser(
   req: Request<{}, {}, UserCreate>,
@@ -47,13 +48,21 @@ export async function createUser(
     // commit the data if all queries are success
     await connection.commit();
 
-    res.status(201).json({ message: "User created successfully." });
-    return;
+    res.end().status(201).json({ message: "User created successfully." });
   } catch (error) {
     // if there was an error, the query will rollback and won't save the previous query before error
     await connection.rollback();
-    handleZodErrors(error, res);
+
     console.log(error);
+
+    // check if zod error
+    if (error instanceof z.ZodError) {
+      handleZodErrors(error, res);
+      return;
+    }
+
+    // throw server error if it's not zod error
+    throwServerError(res);
   } finally {
     // if there was a connection found wether the query fails or not, release it after the try/catch block
     if (connection) connection.release();
@@ -66,7 +75,7 @@ export async function getAccountInfo(
 ) {
   try {
     const { username } = req.params;
-    
+
     const connection = await pool.getConnection();
 
     const [result] = await connection.query<ResultSetHeader>(
@@ -77,9 +86,6 @@ export async function getAccountInfo(
     res.json(result);
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "There was a server error. Please try again later." });
-    return;
+    throwServerError(res);
   }
 }
