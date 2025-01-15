@@ -7,6 +7,7 @@ import { ResultSetHeader } from "mysql2";
 import { hashPassword } from "../helpers/hash";
 import { GET_USER_ACCOUNT_INFO } from "../query/account.query";
 import { z } from "zod";
+import { AccountInfo } from "../types/account_info.types";
 
 export async function createUser(
   req: Request<{}, {}, UserCreate>,
@@ -73,19 +74,25 @@ export async function getAccountInfo(
   req: Request<{ username: string }>,
   res: Response
 ) {
+  const connection = await pool.getConnection();
+
   try {
     const { username } = req.params;
-
-    const connection = await pool.getConnection();
-
-    const [result] = await connection.query<ResultSetHeader>(
+    const [result] = await connection.query<AccountInfo[]>(
       GET_USER_ACCOUNT_INFO,
       [username]
     );
+
+    if (result.length <= 0) {
+      res.status(404).json({error: "User not found."})
+      return
+    }
 
     res.json(result);
   } catch (error) {
     console.log(error);
     throwServerError(res);
+  } finally {
+    if (connection) connection.release();
   }
 }
