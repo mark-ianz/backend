@@ -1,7 +1,7 @@
 export const GET_USER_ACCOUNT_INFO = `SELECT 
 a.account_id, 
 a.username, 
-a.email, 
+a.user_info_id,
 ui.user_info_id, 
 ui.first_name, 
 ui.middle_name, 
